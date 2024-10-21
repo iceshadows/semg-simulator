@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>sEMG Simulator</title>
+    <script src="jquery.min.js"></script>
+    <script src="bootstrap.min.js"></script>
+    <style>
+      body {
+        background: linear-gradient(135deg, #7b4397, #dc2430);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        font-family: Arial, sans-serif;
+        color: #fff;
+      }
+
+      details {
+        /* background: #fff; */
+        padding: 15px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+
+      details[open] summary::after {
+        content: "▲";
+        float: right;
+        font-size: 12px;
+      }
+
+      details summary::after {
+        content: "▼";
+        float: right;
+        font-size: 12px;
+      }
+
+      summary {
+        cursor: pointer;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .content {
+        text-align: justify;
+        margin-top: 10px;
+      }
+
+      .toolbar {
+        width: 90%;
+        max-width: 1200px;
+        background-color: #1e1e1e;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+      }
+
+      button {
+        padding: 10px 15px;
+        background-color: #0078d4;
+        color: #ffffff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s, box-shadow 0.3s;
+        font-size: 14px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        position: relative;
+        overflow: hidden;
+      }
+
+      button:hover {
+        background-color: #005a9e;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      button::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.4s ease, height 0.4s ease, opacity 0.8s ease;
+        opacity: 0;
+      }
+
+      button:active::after {
+        width: 200px;
+        height: 200px;
+        opacity: 0;
+        transition: 0s;
+      }
+
+      #mycanvas {
+        flex-grow: 1;
+        display: block;
+        margin: 20px auto;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        border: 2px solid #ffffff;
+      }
+
+      h1 {
+        margin: 20px 0 10px;
+        text-align: center;
+      }
+
+      p {
+        margin: 0 0 30px;
+        text-align: justify;
+      }
+      .references {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 20px;
+        background-color: #1e1e1e;
+        color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .references h2 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .references p {
+        margin: 10px 0;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>sEMG Simulator</h1>
+    <p>
+      Author: Dr. Linus Zhang | Supervisor: Dr. Yinhua Liu | Contact:
+      <a href="mailto:linus_zhang_iceshadows@hotmail.com"
+        >linus_zhang_iceshadows@hotmail.com</a
+      >
+    </p>
+    <details>
+      <summary><h3>How It Works?</h3></summary>
+      <div class="content">
+        <p>
+          The core objective of this simulator is to model surface muscle
+          potentials by simulating the interaction between electrodes and muscle
+          fibres using surface electromyography (sEMG) signals.
+        </p>
+        <p>
+          In the simulation, electrodes are placed on the surface of virtual
+          muscle fibres, monitoring their electrical activity. Each electrode
+          establishes "contacts" with a number of muscle fibres. These contacts
+          are determined by a series of mathematical calculations, primarily
+          based on the distance between the electrode and the fibre, which
+          defines the "weight" of the contact. A larger weight indicates that
+          the electrode is more sensitive to the signal from that fibre.
+        </p>
+        <p>
+          The activation state of the muscle fibres determines the electrical
+          signals they produce. These activation signals are captured by the
+          electrodes, with each electrode collecting weighted contributions from
+          multiple fibres to determine an overall potential value. The weight
+          calculation is based on a Gaussian distribution function to reflect
+          the proximity of each fibre to the electrode, expressed as:
+          <code>weight = exp((-dx * dx - dy * dy) / R)</code>, where
+          <code>dx</code> and <code>dy</code> represent the relative distances
+          between the electrode and the fibre, and <code>R</code> is a parameter
+          related to signal diffusion.
+        </p>
+        <p>
+          There are two primary electrodes in the simulator. Each electrode
+          calculates a total potential by summing the contributions from all
+          fibres it is in contact with and computing a weighted average. The
+          voltage difference between the two electrodes is then calculated as:
+          <code>voltage_difference = (V1 - V2) * conduction</code>, where
+          <code>V1</code> and <code>V2</code> are the potentials from each
+          electrode respectively, and <code>conduction</code> represents the
+          signal conduction efficiency between the electrodes, which depends on
+          the distance between them and the total weight of effective contacts.
+        </p>
+        <p>
+          This design models the real-world measurement of sEMG signals, where
+          the voltage difference between two electrodes represents the changes
+          in potential at the skin surface due to muscle contractions. By
+          continuously updating the excitation state of each fibre and the
+          positions of the electrodes, the simulator can dynamically display the
+          changing muscle activity over time.
+        </p>
+        <p>
+          The visualisation component is achieved by drawing the muscle fibres,
+          neurons, electrodes, and their pathways on the canvas. Each time the
+          fibres are activated, the simulator updates the contacts of all
+          electrodes and calculates the resultant voltage signal based on the
+          number of activated fibres, their positions, and the intensity of
+          activation.
+        </p>
+
+        <p>Interact with the simulator by adjusting the settings below.</p>
+      </div>
+    </details>
+
+    <div class="toolbar">
+      <div class="button-group">
+        <button id="simplified" onclick="set_mode('simplified')">
+          Simplified Mode
+        </button>
+        <button id="realistic" onclick="set_mode('realistic')">
+          Realistic Mode
+        </button>
+      </div>
+
+      <div class="button-group">
+        <button id="tense" onclick="set_muscle('tense')">Tense</button>
+        <button id="middler" onclick="set_muscle('middler')">Middler</button>
+        <button id="relaxed" onclick="set_muscle('relaxed')">Relaxed</button>
+      </div>
+
+      <div class="button-group">
+        <button id="fast" onclick="set_tempo('fast')">Fast</button>
+        <button id="medium" onclick="set_tempo('medium')">Medium</button>
+        <button id="slow" onclick="set_tempo('slow')">Slow</button>
+        <button id="stopped" onclick="set_tempo('stopped')">Stopped</button>
+      </div>
+
+      <div class="button-group">
+        <button id="independent" onclick="set_sensors('independent')">
+          Independent Sensors
+        </button>
+        <button id="20mm" onclick="set_sensors('20mm')">20mm Sensors</button>
+        <button id="10mm" onclick="set_sensors('10mm')">10mm Sensors</button>
+      </div>
+    </div>
+
+    <canvas id="mycanvas" width="1366" height="800"></canvas>
+    <div class="references">
+      <h2>References</h2>
+      <p>
+        [1] J. C. Kline and C. J. De Luca, "Synchronization of motor unit
+        firings: an epiphenomenon of firing rate characteristics not common
+        inputs," <em>Journal of Neurophysiology</em>, 2016. Available:
+        <a
+          href="https://journals.physiology.org/doi/full/10.1152/jn.00452.2015"
+          target="_blank"
+          >https://journals.physiology.org/doi/full/10.1152/jn.00452.2015</a
+        >.
+      </p>
+      <p>
+        [2] D. Purves, G. J. Augustine, D. Fitzpatrick, et al.,
+        <em>Neuroscience. 2nd edition</em>, 2001. Available:
+        <a
+          href="https://www.ncbi.nlm.nih.gov/books/NBK11021/figure/A1099/?report=objectonly"
+          target="_blank"
+          >https://www.ncbi.nlm.nih.gov/books/NBK11021/figure/A1099/?report=objectonly</a
+        >. (After Monster and Chan, 1977).
+      </p>
+      <p>
+        [3] C. J. De Luca, et al., "Inter-electrode spacing of surface EMG
+        sensors: reduction of crosstalk contamination during voluntary
+        contractions," <em>Journal of Electromyography and Kinesiology</em>,
+        2011. Available:
+        <a href="https://pubmed.ncbi.nlm.nih.gov/22169134/" target="_blank"
+          >https://pubmed.ncbi.nlm.nih.gov/22169134/</a
+        >.
+      </p>
+    </div>
+
+    <script src="sEMG_sim.js"></script>
+  </body>
+</html>

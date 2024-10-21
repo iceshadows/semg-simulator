@@ -1,0 +1,12 @@
+image: node:latest # 可以根据需要替换为适合你的环境的基础镜像
+
+pages:
+  stage: deploy
+  script:
+    - mkdir public
+    - cp -r * public/ # 将所有文件复制到 `public` 目录
+  artifacts:
+    paths:
+      - public # GitLab Pages 需要把静态网站存储在 `public` 目录下
+  only:
+    - main # 仅在 `main` 分支执行
